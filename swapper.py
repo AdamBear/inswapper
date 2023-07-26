@@ -27,16 +27,16 @@ def getFaceAnalyser(model_path: str,
 
 
 def get_one_face(face_analyser,
-                 frame:np.ndarray):
+                 frame: np.ndarray):
     face = face_analyser.get(frame)
     try:
         return min(face, key=lambda x: x.bbox[0])
     except ValueError:
         return None
 
-    
+
 def get_many_faces(face_analyser,
-                   frame:np.ndarray):
+                   frame: np.ndarray):
     """
     get faces from left to right by order
     """
@@ -64,23 +64,22 @@ def swap_face(face_swapper,
         raise Exception("No source face found!")
 
     return face_swapper.get(temp_frame, target_face, source_face, paste_back=True)
- 
-    
+
+
 def process(source_img: Union[Image.Image, List],
             target_img: Image.Image,
             target_index: int,
             model: str):
-        
     # load face_analyser
     face_analyser = getFaceAnalyser(model)
-    
+
     # load face_swapper
     model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), model)
     face_swapper = getFaceSwapModel(model_path)
-    
+
     # read target image
     target_img = cv2.cvtColor(np.array(target_img), cv2.COLOR_RGB2BGR)
-    
+
     # detect faces that will be replaced in target_img
     target_faces = get_many_faces(face_analyser, target_img)
     if target_faces is not None:
@@ -131,17 +130,20 @@ def process(source_img: Union[Image.Image, List],
         result = temp_frame
     else:
         print("No target faces found!")
-    
+
     result_image = Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
     return result_image
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Face swap.")
-    parser.add_argument("--source_img", type=str, required=True, help="The path of source image, it can be multiple images, dir;dir2;dir3.")
+    parser.add_argument("--source_img", type=str, required=True,
+                        help="The path of source image, it can be multiple images, dir;dir2;dir3.")
     parser.add_argument("--target_img", type=str, required=True, help="The path of target image.")
-    parser.add_argument("--output_img", type=str, required=False, default="result.png", help="The path and filename of output image.")
-    parser.add_argument("--target_index", type=int, required=False, default=-1, help="The index of the face to swap (left to right) in the target image, starting at 0 (-1 swaps all faces in the target image")
+    parser.add_argument("--output_img", type=str, required=False, default="result.png",
+                        help="The path and filename of output image.")
+    parser.add_argument("--target_index", type=int, required=False, default=-1,
+                        help="The index of the face to swap (left to right) in the target image, starting at 0 (-1 swaps all faces in the target image")
     parser.add_argument("--face_restore", action="store_true", help="The flag for face restoration.")
     parser.add_argument("--background_enhance", action="store_true", help="The flag for background enhancement.")
     parser.add_argument("--face_upsample", action="store_true", help="The flag for face upsample.")
@@ -151,53 +153,66 @@ def parse_args():
     return args
 
 
-if __name__ == "__main__":
-    
-    args = parse_args()
-    
+def main(args):
     source_img_paths = args.source_img.split(';')
     print(source_img_paths)
     target_img_path = args.target_img
-    
+
     source_img = [Image.open(img_path) for img_path in source_img_paths]
+
+    background_enhance, face_upsample, upscale, codeformer_fidelity, target_index = \
+        args.background_enhance, args.face_upsample, args.upscale, args.codeformer_fidelity, args.target_index
+
     target_img = Image.open(target_img_path)
 
-    # download from https://huggingface.co/deepinsight/inswapper/tree/main
-    model = "./checkpoints/inswapper_128.onnx"
-    result_image = process(source_img, target_img, args.target_index, model)
-    
-    if args.face_restore:
-        from restoration import *
-        
-        # make sure the ckpts downloaded successfully
-        check_ckpts()
-        
-        # https://huggingface.co/spaces/sczhou/CodeFormer
-        upsampler = set_realesrgan()
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    codeformer_net = ARCH_REGISTRY.get("CodeFormer")(dim_embd=512,
+                                                     codebook_size=1024,
+                                                     n_head=8,
+                                                     n_layers=9,
+                                                     connect_list=["32", "64", "128", "256"],
+                                                     ).to(device)
+    ckpt_path = "/data/CodeFormer/weights/CodeFormer/codeformer.pth"
+    checkpoint = torch.load(ckpt_path)["params_ema"]
+    codeformer_net.load_state_dict(checkpoint)
+    codeformer_net.eval()
 
-        codeformer_net = ARCH_REGISTRY.get("CodeFormer")(dim_embd=512,
-                                                         codebook_size=1024,
-                                                         n_head=8,
-                                                         n_layers=9,
-                                                         connect_list=["32", "64", "128", "256"],
-                                                        ).to(device)
-        ckpt_path = "/data/CodeFormer/weights/CodeFormer/codeformer.pth"
-        checkpoint = torch.load(ckpt_path)["params_ema"]
-        codeformer_net.load_state_dict(checkpoint)
-        codeformer_net.eval()
-        
-        result_image = cv2.cvtColor(np.array(result_image), cv2.COLOR_RGB2BGR)
-        result_image = face_restoration(result_image, 
-                                        args.background_enhance, 
-                                        args.face_upsample, 
-                                        args.upscale, 
-                                        args.codeformer_fidelity,
-                                        upsampler,
-                                        codeformer_net,
-                                        device)
-        result_image = Image.fromarray(result_image)
-    
+    result_image = swap(source_img, target_img, background_enhance, codeformer_fidelity, face_upsample,
+                        target_index, upscale, codeformer_net, device)
+
     # save result
     result_image.save(args.output_img)
     print(f'Result saved successfully: {args.output_img}')
+
+
+def swap(source_img, target_img, background_enhance, codeformer_fidelity, face_upsample, target_index, upscale,
+         codeformer_net, device):
+    # download from https://huggingface.co/deepinsight/inswapper/tree/main
+    model = "./checkpoints/inswapper_128.onnx"
+    result_image = process(source_img, target_img, target_index, model)
+    upsampler = None
+
+    # make sure the ckpts downloaded successfully
+    check_ckpts()
+    # https://huggingface.co/spaces/sczhou/CodeFormer
+    #upsampler = set_realesrgan()
+
+    result_image = cv2.cvtColor(np.array(result_image), cv2.COLOR_RGB2BGR)
+    result_image = face_restoration(result_image,
+                                    background_enhance,
+                                    face_upsample,
+                                    upscale,
+                                    codeformer_fidelity,
+                                    upsampler,
+                                    codeformer_net,
+                                    device)
+    result_image = Image.fromarray(result_image)
+    return result_image
+
+
+if __name__ == "__main__":
+    from restoration import *
+
+    args = parse_args()
+
+    main(args)
