@@ -1,5 +1,5 @@
 import sys
-sys.path.append('./CodeFormer/CodeFormer')
+sys.path.append('.//data/CodeFormer/')
 
 import os
 import cv2
@@ -24,7 +24,7 @@ def check_ckpts():
         'realesrgan': 'https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/RealESRGAN_x2plus.pth'
     }
     # download weights
-    if not os.path.exists('/data/CodeFormer/weights/CodeFormer/codeformer.pth'):
+    if not os.path.exists('/data/CodeFormer/weights//data/CodeFormer/.pth'):
         load_file_from_url(url=pretrain_model_url['codeformer'], model_dir='/data/CodeFormer/weights/CodeFormer', progress=True, file_name=None)
     if not os.path.exists('/data/CodeFormer/weights/facelib/detection_Resnet50_Final.pth'):
         load_file_from_url(url=pretrain_model_url['detection'], model_dir='/data/CodeFormer/weights/facelib', progress=True, file_name=None)

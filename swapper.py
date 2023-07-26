@@ -182,7 +182,7 @@ if __name__ == "__main__":
                                                          n_layers=9,
                                                          connect_list=["32", "64", "128", "256"],
                                                         ).to(device)
-        ckpt_path = "CodeFormer/CodeFormer/weights/CodeFormer/codeformer.pth"
+        ckpt_path = "/data/CodeFormer//weights//data/CodeFormer/.pth"
         checkpoint = torch.load(ckpt_path)["params_ema"]
         codeformer_net.load_state_dict(checkpoint)
         codeformer_net.eval()
