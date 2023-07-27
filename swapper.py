@@ -12,7 +12,7 @@ import insightface
 import numpy as np
 from PIL import Image
 from typing import List, Union, Dict, Set, Tuple
-
+from restoration import *
 
 def getFaceSwapModel(model_path: str):
     model = insightface.model_zoo.get_model(model_path)
@@ -70,8 +70,6 @@ def process(source_img: Union[Image.Image, List],
             target_img: Image.Image,
             target_index: int,
             face_analyser, face_swapper):
-
-
 
     # read target image
     target_img = cv2.cvtColor(np.array(target_img), cv2.COLOR_RGB2BGR)
@@ -176,7 +174,6 @@ def main(args):
     codeformer_net.load_state_dict(checkpoint)
     codeformer_net.eval()
 
-
     model = "./checkpoints/inswapper_128.onnx"
     # load face_analyser
     face_analyser = getFaceAnalyser(model)
@@ -215,8 +212,6 @@ def swap(source_img, target_img, background_enhance, codeformer_fidelity, face_u
 
 
 if __name__ == "__main__":
-    from restoration import *
-
     args = parse_args()
 
     main(args)
