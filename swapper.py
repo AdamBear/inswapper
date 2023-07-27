@@ -69,13 +69,9 @@ def swap_face(face_swapper,
 def process(source_img: Union[Image.Image, List],
             target_img: Image.Image,
             target_index: int,
-            model: str):
-    # load face_analyser
-    face_analyser = getFaceAnalyser(model)
+            face_analyser, face_swapper):
 
-    # load face_swapper
-    model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), model)
-    face_swapper = getFaceSwapModel(model_path)
+
 
     # read target image
     target_img = cv2.cvtColor(np.array(target_img), cv2.COLOR_RGB2BGR)
@@ -165,6 +161,9 @@ def main(args):
 
     target_img = Image.open(target_img_path)
 
+    # make sure the ckpts downloaded successfully
+    check_ckpts()
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     codeformer_net = ARCH_REGISTRY.get("CodeFormer")(dim_embd=512,
                                                      codebook_size=1024,
@@ -177,23 +176,28 @@ def main(args):
     codeformer_net.load_state_dict(checkpoint)
     codeformer_net.eval()
 
+
+    model = "./checkpoints/inswapper_128.onnx"
+    # load face_analyser
+    face_analyser = getFaceAnalyser(model)
+    # load face_swapper
+    model_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), model)
+    face_swapper = getFaceSwapModel(model_path)
+
     result_image = swap(source_img, target_img, background_enhance, codeformer_fidelity, face_upsample,
-                        target_index, upscale, codeformer_net, device)
+                        target_index, upscale,  device, codeformer_net, face_analyser, face_swapper)
 
     # save result
     result_image.save(args.output_img)
     print(f'Result saved successfully: {args.output_img}')
 
 
-def swap(source_img, target_img, background_enhance, codeformer_fidelity, face_upsample, target_index, upscale,
-         codeformer_net, device):
-    # download from https://huggingface.co/deepinsight/inswapper/tree/main
-    model = "./checkpoints/inswapper_128.onnx"
-    result_image = process(source_img, target_img, target_index, model)
+def swap(source_img, target_img, background_enhance, codeformer_fidelity, face_upsample, target_index, upscale,device,
+         codeformer_net, face_analyser, face_swapper):
+
+    result_image = process(source_img, target_img, target_index, face_analyser, face_swapper)
     upsampler = None
 
-    # make sure the ckpts downloaded successfully
-    check_ckpts()
     # https://huggingface.co/spaces/sczhou/CodeFormer
     #upsampler = set_realesrgan()
 
