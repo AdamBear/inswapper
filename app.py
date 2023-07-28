@@ -19,7 +19,7 @@ def getFaceSwapModel(model_path: str):
 
 def getFaceAnalyser(model_path: str,
                     det_size=(320, 320)):
-    face_analyser = insightface.app.FaceAnalysis(name="buffalo_l", root="./checkpoints")
+    face_analyser = insightface.app.FaceAnalysis(name="buffalo_l", root="/data/inswapper/checkpoints")
     face_analyser.prepare(ctx_id=0, det_size=det_size)
     return face_analyser
 
