@@ -35,6 +35,7 @@ def get_one_face(face_analyser,
         return None
 
 
+
 def get_many_faces(face_analyser,
                    frame: np.ndarray):
     """
@@ -201,6 +202,8 @@ def swap(source_img, target_img, background_enhance, codeformer_fidelity, face_u
     if face_restore:
         result_image = restore_face(result_image, background_enhance, codeformer_fidelity, codeformer_net, device,
                                     face_upsample, upsampler, upscale)
+        result_image = Image.fromarray(result_image)
+
     return result_image
 
 
@@ -215,7 +218,6 @@ def restore_face(result_image, background_enhance, codeformer_fidelity, codeform
                                     upsampler,
                                     codeformer_net,
                                     device)
-    result_image = Image.fromarray(result_image)
     return result_image
 
 
