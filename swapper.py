@@ -199,16 +199,23 @@ def swap(source_img, target_img, background_enhance, codeformer_fidelity, face_u
     #upsampler = set_realesrgan()
     
     if face_restore:
-        result_image = cv2.cvtColor(np.array(result_image), cv2.COLOR_RGB2BGR)
-        result_image = face_restoration(result_image,
-                                        background_enhance,
-                                        face_upsample,
-                                        upscale,
-                                        codeformer_fidelity,
-                                        upsampler,
-                                        codeformer_net,
-                                        device)
-        result_image = Image.fromarray(result_image)
+        result_image = restore_face(result_image, background_enhance, codeformer_fidelity, codeformer_net, device,
+                                    face_upsample, upsampler, upscale)
+    return result_image
+
+
+def restore_face(result_image, background_enhance, codeformer_fidelity, codeformer_net, device, face_upsample,
+                 upsampler, upscale):
+    result_image = cv2.cvtColor(np.array(result_image), cv2.COLOR_RGB2BGR)
+    result_image = face_restoration(result_image,
+                                    background_enhance,
+                                    face_upsample,
+                                    upscale,
+                                    codeformer_fidelity,
+                                    upsampler,
+                                    codeformer_net,
+                                    device)
+    result_image = Image.fromarray(result_image)
     return result_image
 
 

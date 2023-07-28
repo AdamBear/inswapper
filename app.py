@@ -48,7 +48,7 @@ face_swapper = getFaceSwapModel(model_path)
 codeformer_fidelity = 0.5
 
 
-def run_inference(source_img, target_img, face_restore, codeformer_fidelity=codeformer_fidelity, background_enhance=True, face_upsample=1,
+def run_inference(source_img, target_img, face_restore, codeformer_fidelity=codeformer_fidelity, background_enhance=False, face_upsample=1,
                         target_index=-1, upscale=1, device=device, codeformer_net=codeformer_net, face_analyser=face_analyser, face_swapper=face_swapper):
     
     if codeformer_fidelity >= 1:
