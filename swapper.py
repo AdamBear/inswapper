@@ -190,24 +190,25 @@ def main(args):
 
 
 def swap(source_img, target_img, background_enhance, codeformer_fidelity, face_upsample, target_index, upscale,device,
-         codeformer_net, face_analyser, face_swapper):
+         codeformer_net, face_analyser, face_swapper, face_restore=True):
 
     result_image = process(source_img, target_img, target_index, face_analyser, face_swapper)
     upsampler = None
 
     # https://huggingface.co/spaces/sczhou/CodeFormer
     #upsampler = set_realesrgan()
-
-    result_image = cv2.cvtColor(np.array(result_image), cv2.COLOR_RGB2BGR)
-    result_image = face_restoration(result_image,
-                                    background_enhance,
-                                    face_upsample,
-                                    upscale,
-                                    codeformer_fidelity,
-                                    upsampler,
-                                    codeformer_net,
-                                    device)
-    result_image = Image.fromarray(result_image)
+    
+    if face_restore:
+        result_image = cv2.cvtColor(np.array(result_image), cv2.COLOR_RGB2BGR)
+        result_image = face_restoration(result_image,
+                                        background_enhance,
+                                        face_upsample,
+                                        upscale,
+                                        codeformer_fidelity,
+                                        upsampler,
+                                        codeformer_net,
+                                        device)
+        result_image = Image.fromarray(result_image)
     return result_image
 
 
