@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/data/CodeFormer/CodeFormer')
+sys.path.append('/data/CodeFormer/')
 
 import os
 import cv2
@@ -12,7 +12,7 @@ from basicsr.utils.download_util import load_file_from_url
 from facelib.utils.face_restoration_helper import FaceRestoreHelper
 from facelib.utils.misc import is_gray
 from basicsr.archs.rrdbnet_arch import RRDBNet
-from basicsr.utils.realesrgan_utils import RealESRGANer
+#from basicsr.utils.realesrgan_utils import RealESRGANer
 from basicsr.utils.registry import ARCH_REGISTRY
 
 
@@ -35,26 +35,26 @@ def check_ckpts():
     
     
 # set enhancer with RealESRGAN
-def set_realesrgan():
-    half = True if torch.cuda.is_available() else False
-    model = RRDBNet(
-        num_in_ch=3,
-        num_out_ch=3,
-        num_feat=64,
-        num_block=23,
-        num_grow_ch=32,
-        scale=2,
-    )
-    upsampler = RealESRGANer(
-        scale=2,
-        model_path="/data/CodeFormer/weights/realesrgan/RealESRGAN_x2plus.pth",
-        model=model,
-        tile=400,
-        tile_pad=40,
-        pre_pad=0,
-        half=half,
-    )
-    return upsampler
+# def set_realesrgan():
+#     half = True if torch.cuda.is_available() else False
+#     model = RRDBNet(
+#         num_in_ch=3,
+#         num_out_ch=3,
+#         num_feat=64,
+#         num_block=23,
+#         num_grow_ch=32,
+#         scale=2,
+#     )
+    # upsampler = RealESRGANer(
+    #     scale=2,
+    #     model_path="/data/CodeFormer/weights/realesrgan/RealESRGAN_x2plus.pth",
+    #     model=model,
+    #     tile=400,
+    #     tile_pad=40,
+    #     pre_pad=0,
+    #     half=half,
+    # )
+    # return upsampler
 
 
 def face_restoration(img, background_enhance, face_upsample, upscale, codeformer_fidelity, upsampler, codeformer_net, device):
